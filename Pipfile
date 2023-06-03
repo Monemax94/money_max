@@ -4,6 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+django = "*"
+wheel = "*"
+psycopg2 = "*"
 validate-email = "*"
 install = "*"
 
