@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 validate-email = "*"
 install = "*"
+django-registration = "*"
+six = "*"
 
 [dev-packages]
 
