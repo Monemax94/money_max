@@ -7,6 +7,8 @@ This is a web application for tracking income and expenses. It allows users to m
 ## Technologies Used
 
 - Django: A Python web framework used for the backend development.
+- PostgreSQL: An open-source relational database management system used for data storage.
+- HTML: Markup language for structuring the web pages.
 - JavaScript: Used for client-side interactivity and handling dynamic functionality.
 - HTML: Markup language for structuring the web pages.
 - CSS: Used for styling and layout of the web pages.
@@ -30,9 +32,12 @@ This is a web application for tracking income and expenses. It allows users to m
    - On Windows: `venv\Scripts\activate`
    - On macOS/Linux: `source venv/bin/activate`
 5. Install the dependencies: `pip install -r requirements.txt`
-6. Run database migrations: `python manage.py migrate`
-7. Start the development server: `python manage.py runserver`
-8. Access the app in your browser at `http://localhost:8000`
+6. Set up the PostgreSQL database:
+   - Create a new database in PostgreSQL for the project.
+   - Update the database configuration in the project's settings.py file.
+7. Run database migrations: `python manage.py migrate`
+8. Start the development server: `python manage.py runserver`
+9. Access the app in your browser at `http://localhost:8000`
 
 ## Contributing
 
@@ -51,6 +56,7 @@ This project is licensed under the [MIT License](LICENSE.txt).
 ## Acknowledgments
 
 - [Django](https://www.djangoproject.com/) - The Python web framework used in this project.
+- [PostgreSQL](https://www.postgresql.org/) - The open-source relational database management system used for data storage.
 - [Bootstrap](https://getbootstrap.com/) - Used for styling the user interface.
 - [Chart.js](https://www.chartjs.org/) - Library for creating charts and graphs.
 - [FontAwesome](https://fontawesome.com/) - Icons used in the web app.
