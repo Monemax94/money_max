@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 import json
 from django.http import JsonResponse
-
+from userpreferences.models import UserPreference
 
 
 def search_expenses(request):
@@ -28,12 +28,15 @@ def index(request):
     paginator = Paginator(expenses, 5)
     page_number = request.GET.get('page')
     page_obj = Paginator.get_page(paginator, page_number)
+    currency = UserPreference.objects.get(user=request.user).currency
     context = {
         'expenses': expenses,
-        'page_obj': page_obj
+        'page_obj': page_obj,
+        'currency': currency,
     }
     return render(request, 'expenses/index.html', context)
 
+@login_required(login_url='/authentication/login')
 def add_expense(request):
     categories = Category.objects.all()
     if request.method == 'POST':
@@ -57,6 +60,7 @@ def add_expense(request):
     }
     return render(request, 'expenses/add_expense.html', context)
 
+@login_required(login_url='/authentication/login')
 def expense_edit(request, id):
     try:
         expense = Expense.objects.get(pk=id, owner=request.user)
