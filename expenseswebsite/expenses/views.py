@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 import json
 from django.http import JsonResponse
 from userpreferences.models import UserPreference
+from datetime import datetime
 
 
 def search_expenses(request):
@@ -27,8 +28,14 @@ def index(request):
     expenses = Expense.objects.filter(owner=request.user)
     paginator = Paginator(expenses, 5)
     page_number = request.GET.get('page')
-    page_obj = Paginator.get_page(paginator, page_number)
-    currency = UserPreference.objects.get(user=request.user).currency
+    page_obj = paginator.get_page(page_number)
+
+    try:
+        user_preference = UserPreference.objects.get(user=request.user)
+        currency = user_preference.currency
+    except UserPreference.DoesNotExist:
+        currency = None
+
     context = {
         'expenses': expenses,
         'page_obj': page_obj,
@@ -42,7 +49,7 @@ def add_expense(request):
     if request.method == 'POST':
         amount = request.POST.get('amount')
         description = request.POST.get('description')
-        date = request.POST.get('expense_date')
+        date_str = request.POST.get('expense_date')
         category = request.POST.get('category')
 
         if not amount:
@@ -50,15 +57,19 @@ def add_expense(request):
         elif not description:
             messages.error(request, 'Description is required!')
         else:
-            expense = Expense.objects.create(owner=request.user, amount=amount, date=date, category=category, description=description)
-            messages.success(request, 'Expense saved successfully!')
-            return redirect('expenses')
-    
+            try:
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                expense = Expense.objects.create(owner=request.user, amount=amount, date=date, category=category, description=description)
+                messages.success(request, 'Expense saved successfully!')
+                return redirect('expenses')
+            except ValueError:
+                messages.error(request, 'Invalid date format! The date must be in YYYY-MM-DD format.')
+
     context = {
         'categories': categories,
         'values': request.POST
     }
-    return render(request, 'expenses/add_expense.html', context)
+    return render(request, 'expenses/add_expense.html', context)    
 
 @login_required(login_url='/authentication/login')
 def expense_edit(request, id):
@@ -72,21 +83,27 @@ def expense_edit(request, id):
     if request.method == 'POST':
         amount = request.POST.get('amount')
         description = request.POST.get('description')
-        date = request.POST.get('expense_date')
+        date_str = request.POST.get('expense_date')
         category = request.POST.get('category')
 
         if not amount:
             messages.error(request, 'Amount is required!')
         elif not description:
             messages.error(request, 'Description is required!')
+        elif not date_str:
+            messages.error(request, 'Date is required!')
         else:
-            expense.amount = amount
-            expense.description = description
-            expense.date = date
-            expense.category = category
-            expense.save()
-            messages.success(request, 'Expense updated successfully!')
-            return redirect('expenses')
+            try:
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                expense.amount = amount
+                expense.description = description
+                expense.date = date
+                expense.category = category
+                expense.save()
+                messages.success(request, 'Expense updated successfully!')
+                return redirect('expenses')
+            except ValueError:
+                messages.error(request, 'Invalid date format! The date must be in YYYY-MM-DD format.')
 
     context = {
         'expense': expense,
