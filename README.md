@@ -55,10 +55,8 @@ This project is licensed under the [MIT License](LICENSE.txt).
 
 ## Acknowledgments
 
+- [ALX Africa](https://www.alxafrica.com/software-engineering/) - Mentorship and training
 - [Django](https://www.djangoproject.com/) - The Python web framework used in this project.
 - [PostgreSQL](https://www.postgresql.org/) - The open-source relational database management system used for data storage.
 - [Bootstrap](https://getbootstrap.com/) - Used for styling the user interface.
 - [Chart.js](https://www.chartjs.org/) - Library for creating charts and graphs.
-- [FontAwesome](https://fontawesome.com/) - Icons used in the web app.
-
-

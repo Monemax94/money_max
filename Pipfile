@@ -8,6 +8,8 @@ validate-email = "*"
 install = "*"
 django-registration = "*"
 six = "*"
+xlwt = "*"
+weasyprint = "*"
 
 [dev-packages]
 

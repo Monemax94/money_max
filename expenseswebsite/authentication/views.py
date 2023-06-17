@@ -12,7 +12,7 @@ from django.utils.encoding import force_bytes, force_str, DjangoUnicodeDecodeErr
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.sites.shortcuts import get_current_site
 from .utils import token_generator
-
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 
 # Create your views here.
@@ -53,9 +53,9 @@ class RegisterationView(View):
         return render(request, 'authentication/register.html')
     
     def post(self, request):
-        #GET USER DATA
-        #VALIDATE
-        #CREATE A USER ACCOUNT
+    #GET USER DATA
+    #VALIDATE
+    #CREATE A USER ACCOUNT
 
         username = request.POST['username']
         email = request.POST['email']
@@ -83,7 +83,7 @@ class RegisterationView(View):
             #     #  - encode uid
             #     #  - token
                 uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-               
+                
                 domain = get_current_site(request).domain
                 link = reverse('activate', kwargs={
                                 'uidb64': uidb64, 'token': token_generator.make_token(user)})
@@ -101,11 +101,18 @@ class RegisterationView(View):
                 email.send(fail_silently=False)
 
                 messages.success(request, 
-                                 'Account successfully created check your email to activate your account and login!')
+                                    'Account successfully created check your email to activate your account and login!')
                 return render(request, 'authentication/register.html')
 
 
         return render(request, 'authentication/register.html')
+            # #   Email activation message code
+            # #   path_to_view
+            #     #  - getting the domain we are on
+            #     #  - relative url to verification
+            #     #  - encode uid
+            #     #  - token
+                
     
 class VerificationView(View):
     """ User email verification view class
@@ -135,6 +142,7 @@ class VerificationView(View):
 
         return redirect('login')
     
+
 class LoginView(View):
     """ User login view class
     """
@@ -172,3 +180,119 @@ class LogoutView(View):
         auth.logout(request)
         messages.success(request, 'You have been logged out')
         return redirect('login')
+    
+
+
+class RequestPasswordResetEmail(View):
+    def get(self, request):
+        return render(request, 'authentication/reset-password.html')
+    
+    def post(self, request):
+
+        email = request.POST['email']
+
+        context = {
+            'values': request.POST
+        }
+
+        if not validate_email(email):
+            messages.error(request, 'Please supply a valid email')
+            return render(request, 'authentication/reset-password.html', context)
+        
+        current_site = get_current_site(request)
+
+        user = User.objects.filter(email=email)
+        if user.exists():
+            email_contents = {
+                'user': user[0],
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(user[0].pk)),
+                'token': PasswordResetTokenGenerator().make_token(user[0]),
+            }
+
+        link = reverse('reset-user-password', kwargs={
+            'uidb64': email_contents['uid'], 'token': email_contents['token']})
+
+        email_subject = 'Password reset informations'
+
+        reset_url = 'http://'+current_site.domain+link
+
+        email = EmailMessage(
+            email_subject,
+            'Hi there, Please click the link below to reset your password \n' + reset_url,
+            'noreply@semycolon.com',
+            [email],
+        )
+        email.send(fail_silently=False)
+
+        messages.success(request, 'We have sent you a password reset email')
+
+        return render(request, 'authentication/reset-password.html')
+
+
+
+class CompletePasswordReset(View):
+    def get(self, request, uidb64, token):
+
+        context = {
+            'uidb64': uidb64,
+            'token': token,
+        }
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uidb64))
+
+            user = User.objects.get(pk=user_id)
+
+
+            if not PasswordResetTokenGenerator().check_token(user, token):
+
+                messages.info(
+                    request, 'Link already Used!, Please request a new one')
+                return render(request, 'authentication/reset-password.html')
+        except Exception as identifier:
+            pass
+
+        return render(request, 'authentication/set-new-password.html', context)
+    
+    def post(self, request, uidb64, token):
+
+        context = {
+            'uidb64': uidb64,
+            'token': token,
+        }
+
+        password = request.POST.get('password')
+        password2 = request.POST.get('password2')
+
+
+        if not password or not password2:
+            messages.error(request, 'Please fill in all fields')
+            return render(request, 'authentication/set-new-password.html', context)
+
+
+        if password != password2:
+            messages.error(request, 'Passwords do not match')
+            return render(request, 'authentication/set-new-password.html', context)
+        
+
+        if len(password) < 6:
+            messages.error(request, 'Passwords too short')
+            return render(request, 'authentication/set-new-password.html', context)
+        
+        try:
+            user_id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=user_id)
+            user.set_password(password)
+            user.is_active = True
+            user.save()
+
+            messages.success(request, 'Password reset successful. You can now login with your new password.')
+            return redirect('login')
+        
+        except Exception as identifier:
+            messages.error(request, 'Something went wrong. Please try again.')
+            return redirect('reset-password')
+
+
+        # return render(request, 'authentication/set-new-password.html', context)

@@ -10,38 +10,31 @@
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
               <li class="breadcrumb-item">
-                <a href="">EXPENSES</a>
+                <a href="">INCOME</a>
               </li>
               <li class="breadcrumb-item active" aria-current="page">
-                MY EXPENSES
+                MY INCOME
               </li>
             </ol>
           </nav>
      </div>
     
      <div class="col-md-2">
-        <a href="{% url 'add_expense'%}" class="btn btn-secondary"> Add Expense</a>
+        <a href="{% url 'add_income'%}" class="btn btn-secondary"> Add Income</a>
      </div>
  </div>
 
  <div class="container">
   {% include 'partials/_messages.html' %}
-  {% if expenses.count %}
+  
+  {% if income.count %}
+
     <div class="row">
       <div class="col-md-8"></div>
-
-
-      <div class="col-dm-4">
-
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-          <a href="{% url 'export_excel' %}" style="padding: 8px 8px; border-radius: 4px; font-weight: bold; text-decoration: none; color: #fff; background-color: #0dc389; border-color: #00ffc8d3;" class="btn">Export Excel</a>
-          <a href="{% url 'export_pdf' %}" style="padding: 8px 8px; border-radius: 4px; font-weight: bold; text-decoration: none; color: #fff; background-color: #af0202; border-color: #b33726;" class="btn">Export PDF</a>
-          <a href="{% url 'export_csv' %}" style="padding: 8px 8px; border-radius: 4px; font-weight: bold; text-decoration: none; color: #fff; background-color: #0660dd; border-color: #109cfffc;" class="btn">Export CSV</a>
-      </div>
-      
+      <div class="col-md-4">
 
         <div class="form-group">
-          <input type="text" class="form-control" id="searchField" placeholder="Search Expense">
+          <input type="text" class="form-control" id="searchField" placeholder="Search Income">
         </div>
       </div>
     </div>
@@ -50,25 +43,25 @@
     <thead>
       <tr>
         <th>AMOUNT ({{currency}})</th>
-        <th>CATEGORY</th>
+        <th>SOURCE</th>
         <th>DESCRIPTION</th>
-        <th>DATE</th>
+        <th>DATE EARNED</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
 
-      {% for expense in page_obj  %}
+      {% for income in page_obj  %}
 
       <tr>
-        <td>{{expense.amount}}</td>
-        <td>{{expense.category}}</td>
-        <td>{{expense.description}}</td>
-        <td>{{expense.date}}</td>
+        <td>{{income.amount}}</td>
+        <td>{{income.source}}</td>
+        <td>{{income.description}}</td>
+        <td>{{income.date}}</td>
 
         <td>
           <a
-           href="{% url 'expense-edit' expense.id %}"
+           href="{% url 'income-edit' income.id %}"
            class="btn btn-primary btn-sm">Edit</a>
           </td>
       </tr>
@@ -82,9 +75,9 @@
         <thead>
           <tr>
             <th>AMOUNT ({{currency}})</th>
-            <th>CATEGORY</th>
+            <th>SOURCE</th>
             <th>DESCRIPTION</th>
-            <th>DATE</th>
+            <th>DATE EARNED</th>
             <th></th>
           </tr>
         </thead>
@@ -119,6 +112,9 @@
  </div>
 </div>
 
-<script src="{% static 'js/searchExpenses.js' %}"></script>
+
+
+
+<script src="{% static 'js/searchIncome.js' %}"></script>
 
 {% endblock content %}
