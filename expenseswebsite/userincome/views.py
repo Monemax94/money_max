@@ -5,8 +5,23 @@ from django.core.paginator import Paginator
 from userpreferences.models import UserPreference
 from django.contrib import messages
 import json
-from django.http import JsonResponse
-from datetime import datetime
+from django.http import JsonResponse, HttpResponse
+from datetime import *
+from django.utils import timezone
+
+# Usage example
+# date_str = '2023-06-18'
+# date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+
+# csv file conversion utility import
+import csv
+# Excelfile conversion utility import
+import xlwt
+# pdf file conversion utility import
+from django.template.loader import render_to_string
+from weasyprint import HTML
+import tempfile
+from django.db.models import Sum
 
 # Create your views here. add_income
 
@@ -110,7 +125,7 @@ def income_edit(request, id):
                 income.source = source
                 income.save()
                 messages.success(request, 'Income updated successfully!')
-                return redirect('expenses')
+                return redirect('income')
             except ValueError:
                 messages.error(request, 'Invalid date format! The date must be in YYYY-MM-DD format.')
 
@@ -127,3 +142,91 @@ def delete_income(request, id):
     income.delete()
     messages.success(request, 'income removed')
     return redirect('income')
+
+
+
+
+
+
+def income_export_csv(request):
+    now = timezone.now().strftime('%Y-%m-%d_%H-%M-%S')  # Format the current datetime
+    filename = 'Expenses_{}.csv'.format(now)
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'inline; attachment; filename="{}"'.format(filename)
+
+    writer = csv.writer(response)
+    writer.writerow(['AMOUNT', 'DESCRIPTION', 'CATEGORY', 'DATE'])
+
+    incomes = Userincome.objects.filter(owner=request.user)
+
+    for income in incomes:
+        writer.writerow([income.amount, income.description, income.source, income.date])
+
+    return response
+
+
+def income_export_excel(request):
+
+    import datetime
+
+    response = HttpResponse(content_type='application/ms-excel')
+    current_datetime = datetime.datetime.now()
+    file_name = 'Incomes_' + current_datetime.strftime('%Y-%m-%d_%H-%M-%S') + '.xls'
+    response['Content-Disposition'] = 'inline; attachment; filename=' + file_name
+
+    wb = xlwt.Workbook(encoding='utf-8')
+    ws = wb.add_sheet('Incomes')
+    row_num = 0
+    font_style = xlwt.XFStyle()
+    font_style.font.bold = True
+
+    columns = ['AMOUNT', 'DESCRIPTION', 'CATEGORY', 'DATE']
+
+    for col_num in range(len(columns)):
+        ws.write(row_num, col_num, columns[col_num], font_style)
+
+    font_style = xlwt.XFStyle()
+
+    rows = Userincome.objects.filter(owner=request.user).values_list(
+        'amount', 'description', 'source', 'date')
+    
+    for row in rows:
+        row_num += 1
+
+        for col_num in range(len(row)):
+            ws.write(row_num, col_num, str(row[col_num]), font_style)
+    
+    wb.save(response)
+
+    return response
+
+
+def income_export_pdf(request):
+
+    import datetime
+
+    response = HttpResponse(content_type='application/pdf')
+    current_datetime = datetime.datetime.now()
+    file_name = 'Incomes_' + current_datetime.strftime('%Y-%m-%d_%H-%M-%S') + '.pdf'
+    response['Content-Disposition'] = 'inline; filename=' + file_name
+
+    response['Content-Transfer-Encoding'] = 'binary'
+
+    incomes = Userincome.objects.filter(owner=request.user)
+
+    total = incomes.aggregate(Sum('amount'))
+
+    html_string = render_to_string(
+        'income/pdf-output.html', {'incomes': incomes, 'total': total['amount__sum']})
+    html = HTML(string=html_string)
+
+    result = html.write_pdf()
+
+    with tempfile.NamedTemporaryFile(delete=True) as output:
+        output.write(result)
+        output.flush()
+        output = open(output.name, 'rb')
+        response.write(output.read())
+
+    return response
