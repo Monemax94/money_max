@@ -1,12 +1,12 @@
 const renderChart = (data, labels) => {
   var ctx = document.getElementById("myChart").getContext("2d");
   var myChart = new Chart(ctx, {
-    type: "pie",
+    type: "bar",
     data: {
       labels: labels,
       datasets: [
         {
-          label: "Last 6 months expenses",
+          label: "Last 6 months Income",
           data: data,
           backgroundColor: [
             "rgba(255, 99, 132, 0.2)",
@@ -33,7 +33,7 @@ const renderChart = (data, labels) => {
     options: {
       title: {
         display: true,
-        text: "Expenses per category",
+        text: "income per source",
       },
     },
   });
@@ -41,14 +41,14 @@ const renderChart = (data, labels) => {
 
 const getChartData = () => {
   console.log("fetching");
-  fetch("/expense_category_summary")
+  fetch("/income/income_source_summary")
     .then((res) => res.json())
     .then((results) => {
       console.log("results", results);
-      const category_data = results.expense_category_data;
+      const source_data = results.income_source_data;
       const [labels, data] = [
-        Object.keys(category_data),
-        Object.values(category_data),
+        Object.keys(source_data),
+        Object.values(source_data),
       ];
 
       renderChart(data, labels);

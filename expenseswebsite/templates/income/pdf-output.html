@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expenses Report</title>
+    <title>Income Report</title>
 
 
 
@@ -26,27 +26,27 @@
 <body>
     <img src="https://drive.google.com/file/d/1Z4sRvjjyBYGJgADYsmwhprZ4oLuL3-eG/view?usp=sharing" />
 
-    <h3>Expenses List</h3>
+    <h3>Incomes List</h3>
 
     <table class="table">
         <thead>
             <tr>
                 <th>S/N</th>
                 <th>DESCRIPTION</th>
-                <th>CATEGORY</th>
+                <th>SOURCE</th>
                 <th>AMOUNT</th>
                 <th>DATE</th>
             </tr>
         </thead>
         <br>
         <tbody>
-            {% for expense in expenses %}
+            {% for income in incomes %}
                 <tr>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ expense.description }}</td>
-                    <td>{{ expense.category }}</td>
-                    <td>{{ expense.amount }}</td>
-                    <td>{{ expense.date }}</td>
+                    <td>{{ income.description }}</td>
+                    <td>{{ income.source }}</td>
+                    <td>{{ income.amount }}</td>
+                    <td>{{ income.date }}</td>
                 </tr>
             {% endfor %}
             <tr>
