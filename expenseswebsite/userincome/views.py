@@ -144,7 +144,26 @@ def delete_income(request, id):
     return redirect('income')
 
 
+def income_source_summary(request):
+    today = date.today()
+    six_months_ago = today - timedelta(days=30*6)
+    
+    userincome = Userincome.objects.filter(owner=request.user,
+                                      date__gte=six_months_ago,
+                                      date__lte=today)
+    
+    finalrep = {}
+    for income in userincome:
+        source = income.source
+        if source in finalrep:
+            finalrep[source] += income.amount
+        else:
+            finalrep[source] = income.amount
+    
+    return JsonResponse({'income_source_data': finalrep}, safe=False)
 
+def income_stats_view(request):
+    return render(request, 'income/income_stats.html')
 
 
 
