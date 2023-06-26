@@ -23,11 +23,16 @@ from weasyprint import HTML
 import tempfile
 from django.db.models import Sum
 
-# Create your views here. add_income
-
-
-
+# Search income
 def search_income(request):
+    """
+    View function for searching income.
+
+    Searches income based on the provided search text in the request body.
+
+    :param request: The HTTP request object.
+    :return: JSON response with the search results.
+    """
     if request.method == 'POST':
         search_str = json.loads(request.body).get('searchText')
         income = Userincome.objects.filter(
@@ -38,9 +43,17 @@ def search_income(request):
         data = income.values()
         return JsonResponse(list(data), safe=False)
 
-
+# Index page
 @login_required(login_url='/authentication/login')
 def index(request):
+    """
+    View function for the income index page.
+
+    Renders the income index page with income data.
+
+    :param request: The HTTP request object.
+    :return: Rendered HTML template for the income index page.
+    """
     sources = Source.objects.all()
     income = Userincome.objects.filter(owner=request.user)
     paginator = Paginator(income, 5)
@@ -57,10 +70,17 @@ def index(request):
     }
     return render(request, 'income/index.html', context)
 
-
-
+# Add income
 @login_required(login_url='/authentication/login')
 def add_income(request):
+    """
+    View function for adding income.
+
+    Handles both GET and POST requests. Renders the add income form and creates a new income object respectively.
+
+    :param request: The HTTP request object.
+    :return: Rendered HTML template or redirection to income index.
+    """
     sources = Source.objects.all()
     context = {
         'sources': sources,
@@ -94,9 +114,18 @@ def add_income(request):
         messages.success(request, 'Income added successfully')
         return redirect('income')
 
-
+# Edit income
 @login_required(login_url='/authentication/login')
 def income_edit(request, id):
+    """
+    View function for editing income.
+
+    Handles both GET and POST requests. Renders the edit income form and updates the income object respectively.
+
+    :param request: The HTTP request object.
+    :param id: The ID of the income to be edited.
+    :return: Rendered HTML template or redirection to income index.
+    """
     try:
         income = Userincome.objects.get(pk=id, owner=request.user)
     except Userincome.DoesNotExist:
@@ -136,22 +165,39 @@ def income_edit(request, id):
     }
     return render(request, 'income/edit_income.html', context)
 
-
+# Delete income
 def delete_income(request, id):
+    """
+    View function for deleting income.
+
+    Deletes the specified income object.
+
+    :param request: The HTTP request object.
+    :param id: The ID of the income to be deleted.
+    :return: Redirection to income index.
+    """
     income = Userincome.objects.get(pk=id)
     income.delete()
-    messages.success(request, 'income removed')
+    messages.success(request, 'Income removed')
     return redirect('income')
 
-
+# Income source summary
 def income_source_summary(request):
+    """
+    View function for generating income source summary.
+
+    Calculates the total income for each income source in the last six months.
+
+    :param request: The HTTP request object.
+    :return: JSON response with the income source data.
+    """
     today = date.today()
     six_months_ago = today - timedelta(days=30*6)
-    
+
     userincome = Userincome.objects.filter(owner=request.user,
                                       date__gte=six_months_ago,
                                       date__lte=today)
-    
+
     finalrep = {}
     for income in userincome:
         source = income.source
@@ -159,15 +205,31 @@ def income_source_summary(request):
             finalrep[source] += income.amount
         else:
             finalrep[source] = income.amount
-    
+
     return JsonResponse({'income_source_data': finalrep}, safe=False)
 
+# Income statistics view
 def income_stats_view(request):
+    """
+    View function for the income statistics page.
+
+    Renders the income statistics page.
+
+    :param request: The HTTP request object.
+    :return: Rendered HTML template for the income statistics page.
+    """
     return render(request, 'income/income_stats.html')
 
-
-
+# Export income to CSV
 def income_export_csv(request):
+    """
+    View function for exporting income data to CSV.
+
+    Generates a CSV file with the income data.
+
+    :param request: The HTTP request object.
+    :return: HTTP response with the CSV file.
+    """
     now = timezone.now().strftime('%Y-%m-%d_%H-%M-%S')  # Format the current datetime
     filename = 'Expenses_{}.csv'.format(now)
 
@@ -184,9 +246,16 @@ def income_export_csv(request):
 
     return response
 
-
+# Export income to Excel
 def income_export_excel(request):
+    """
+    View function for exporting income data to Excel.
 
+    Generates an Excel file with the income data.
+
+    :param request: The HTTP request object.
+    :return: HTTP response with the Excel file.
+    """
     import datetime
 
     response = HttpResponse(content_type='application/ms-excel')
@@ -209,20 +278,27 @@ def income_export_excel(request):
 
     rows = Userincome.objects.filter(owner=request.user).values_list(
         'amount', 'description', 'source', 'date')
-    
+
     for row in rows:
         row_num += 1
 
         for col_num in range(len(row)):
             ws.write(row_num, col_num, str(row[col_num]), font_style)
-    
+
     wb.save(response)
 
     return response
 
-
+# Export income to PDF
 def income_export_pdf(request):
+    """
+    View function for exporting income data to PDF.
 
+    Generates a PDF file with the income data.
+
+    :param request: The HTTP request object.
+    :return: HTTP response with the PDF file.
+    """
     import datetime
 
     response = HttpResponse(content_type='application/pdf')
