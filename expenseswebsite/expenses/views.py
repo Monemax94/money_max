@@ -13,32 +13,48 @@ from django.utils import timezone
 # date_str = '2023-06-18'
 # date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
 
-# csv file conversion utility import
+# CSV file conversion utility import
 import csv
-# Excelfile conversion utility import
+# Excel file conversion utility import
 import xlwt
-# pdf file conversion utility import
+# PDF file conversion utility import
 from django.template.loader import render_to_string
 from weasyprint import HTML
 import tempfile
 from django.db.models import Sum
 
 def search_expenses(request):
+    """
+    Search expenses based on the provided search string.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - JsonResponse: JSON response containing the matching expenses.
+    """
     if request.method == 'POST':
         search_str = json.loads(request.body).get('searchText')
         expenses = Expense.objects.filter(
-            amount__istartswith = search_str, owner = request.user ) | Expense.objects.filter(
-            date__istartswith = search_str, owner = request.user ) | Expense.objects.filter(
-            description__icontains = search_str, owner = request.user ) | Expense.objects.filter(
-            category__icontains = search_str, owner = request.user ) 
+            amount__istartswith=search_str, owner=request.user) | Expense.objects.filter(
+            date__istartswith=search_str, owner=request.user) | Expense.objects.filter(
+            description__icontains=search_str, owner=request.user) | Expense.objects.filter(
+            category__icontains=search_str, owner=request.user)
         data = expenses.values()
         return JsonResponse(list(data), safe=False)
- 
-
 
 
 @login_required(login_url='/authentication/login')
 def index(request):
+    """
+    View function for displaying the expenses.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: Rendered response with the expenses and pagination.
+    """
     expenses = Expense.objects.filter(owner=request.user)
     paginator = Paginator(expenses, 5)
     page_number = request.GET.get('page')
@@ -57,8 +73,19 @@ def index(request):
     }
     return render(request, 'expenses/index.html', context)
 
+
 @login_required(login_url='/authentication/login')
 def add_expense(request):
+    """
+    View function for adding a new expense.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: Rendered response for adding an expense.
+    - HttpResponseRedirect: Redirects to the expense list after adding an expense.
+    """
     categories = Category.objects.all()
     context = {
         'categories': categories,
@@ -90,10 +117,22 @@ def add_expense(request):
 
         Expense.objects.create(owner=request.user, amount=amount, date=date, category=category, description=description)
         messages.success(request, 'Expense added successfully')
-        return redirect('expenses')    
+        return redirect('expenses')
+
 
 @login_required(login_url='/authentication/login')
 def expense_edit(request, id):
+    """
+    View function for editing an expense.
+
+    Parameters:
+    - request: The HTTP request object.
+    - id: The ID of the expense to be edited.
+
+    Returns:
+    - HttpResponse: Rendered response for editing an expense.
+    - HttpResponseRedirect: Redirects to the expense list after editing an expense.
+    """
     try:
         expense = Expense.objects.get(pk=id, owner=request.user)
     except Expense.DoesNotExist:
@@ -133,7 +172,18 @@ def expense_edit(request, id):
     }
     return render(request, 'expenses/edit-expense.html', context)
 
+
 def delete_expense(request, id):
+    """
+    View function for deleting an expense.
+
+    Parameters:
+    - request: The HTTP request object.
+    - id: The ID of the expense to be deleted.
+
+    Returns:
+    - HttpResponseRedirect: Redirects to the expense list after deleting an expense.
+    """
     try:
         expense = Expense.objects.get(pk=id, owner=request.user)
         expense.delete()
@@ -144,13 +194,22 @@ def delete_expense(request, id):
 
 
 def expense_category_summary(request):
+    """
+    View function for generating the expense category summary.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - JsonResponse: JSON response containing the expense category data.
+    """
     today = date.today()
-    six_months_ago = today - timedelta(days=30*6)
-    
+    six_months_ago = today - timedelta(days=30 * 6)
+
     expenses = Expense.objects.filter(owner=request.user,
                                       date__gte=six_months_ago,
                                       date__lte=today)
-    
+
     finalrep = {}
     for expense in expenses:
         category = expense.category
@@ -158,16 +217,33 @@ def expense_category_summary(request):
             finalrep[category] += expense.amount
         else:
             finalrep[category] = expense.amount
-    
+
     return JsonResponse({'expense_category_data': finalrep}, safe=False)
 
+
 def stats_view(request):
+    """
+    View function for displaying expense statistics.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: Rendered response for displaying expense statistics.
+    """
     return render(request, 'expenses/stats.html')
 
 
-
-
 def export_csv(request):
+    """
+    View function for exporting expenses as a CSV file.
+
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: CSV file response containing the expenses.
+    """
     now = timezone.now().strftime('%Y-%m-%d_%H-%M-%S')  # Format the current datetime
     filename = 'Expenses_{}.csv'.format(now)
 
@@ -186,7 +262,15 @@ def export_csv(request):
 
 
 def export_excel(request):
+    """
+    View function for exporting expenses as an Excel file.
 
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: Excel file response containing the expenses.
+    """
     import datetime
 
     response = HttpResponse(content_type='application/ms-excel')
@@ -209,20 +293,28 @@ def export_excel(request):
 
     rows = Expense.objects.filter(owner=request.user).values_list(
         'amount', 'description', 'category', 'date')
-    
+
     for row in rows:
         row_num += 1
 
         for col_num in range(len(row)):
             ws.write(row_num, col_num, str(row[col_num]), font_style)
-    
+
     wb.save(response)
 
     return response
 
 
 def export_pdf(request):
+    """
+    View function for exporting expenses as a PDF file.
 
+    Parameters:
+    - request: The HTTP request object.
+
+    Returns:
+    - HttpResponse: PDF file response containing the expenses.
+    """
     import datetime
 
     response = HttpResponse(content_type='application/pdf')
